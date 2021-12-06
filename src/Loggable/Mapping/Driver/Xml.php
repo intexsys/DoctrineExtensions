@@ -51,6 +51,18 @@ class Xml extends BaseXml
         if (isset($xmlDoctrine->field)) {
             $this->inspectElementForVersioned($xmlDoctrine->field, $config, $meta);
         }
+        if (
+            isset($xmlDoctrine->{'attribute-overrides'})
+            && isset($xmlDoctrine->{'attribute-overrides'}->{'attribute-override'})
+        ) {
+            foreach ($xmlDoctrine->{'attribute-overrides'}->{'attribute-override'} as $override) {
+                if (isset($override->field)) {
+                    $fieldName = $this->_getAttribute($override, 'name');
+                    $this->inspectElementForVersioned($override, $config, $meta, $fieldName);
+                }
+            }
+
+        }
         if (isset($xmlDoctrine->{'many-to-one'})) {
             $this->inspectElementForVersioned($xmlDoctrine->{'many-to-one'}, $config, $meta);
         }
@@ -79,7 +91,7 @@ class Xml extends BaseXml
      *
      * @param object $meta
      */
-    private function inspectElementForVersioned(\SimpleXMLElement $element, array &$config, $meta)
+    private function inspectElementForVersioned(\SimpleXMLElement $element, array &$config, $meta, $fieldName = null)
     {
         foreach ($element as $mapping) {
             $mappingDoctrine = $mapping;
@@ -89,7 +101,7 @@ class Xml extends BaseXml
             $mapping = $mapping->children(self::GEDMO_NAMESPACE_URI);
 
             $isAssoc = $this->_isAttributeSet($mappingDoctrine, 'field');
-            $field = $this->_getAttribute($mappingDoctrine, $isAssoc ? 'field' : 'name');
+            $field = $fieldName ?? $this->_getAttribute($mappingDoctrine, $isAssoc ? 'field' : 'name');
 
             if (isset($mapping->versioned)) {
                 if ($isAssoc && !$meta->associationMappings[$field]['isOwningSide']) {
